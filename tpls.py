@@ -17,12 +17,13 @@ class Templates:
 
             print("Loaded "+file)
 
+    # coin - rgb array
     def detectCoinValue(self, coin):
         deduction = 1000
         value = None
 
         for tpl in self.templates:
-            # edit this
+            # tpl.image - rgb image array with values from templates/
             d = cv2.matchShapes(cv2.cvtColor(coin, cv2.COLOR_RGB2GRAY), tpl.image, cv2.CONTOURS_MATCH_I2, 0)
 
             print(d, tpl.value)
