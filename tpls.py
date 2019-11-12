@@ -17,6 +17,23 @@ class Templates:
 
             print("Loaded "+file)
 
+    def detectCoinValue(self, coin):
+        deduction = 1000
+        value = None
+
+        for tpl in self.templates:
+            # edit this
+            d = cv2.matchShapes(cv2.cvtColor(coin, cv2.COLOR_RGB2GRAY), tpl.image, cv2.CONTOURS_MATCH_I2, 0)
+
+            print(d, tpl.value)
+            if d < deduction:
+                print("Coin detected value: ", tpl.value)
+                value = tpl.value
+                deduction = d
+
+        return value
+
+
 
 class Template:
 
