@@ -1,7 +1,7 @@
 import cv2
 import glob
 import os
-
+import numpy as np
 
 class Templates:
 
@@ -19,13 +19,23 @@ class Templates:
 
     # coin - rgb array
     def detectCoinValue(self, coin):
+        closing,thresh = Templates.processToMark(coin)
+        cv2.imshow("coin closing", thresh)
+
+      
+
         deduction = 1000
         value = None
 
         for tpl in self.templates:
             # tpl.image - rgb image array with values from templates/
-            d = cv2.matchShapes(cv2.cvtColor(coin, cv2.COLOR_RGB2GRAY), tpl.image, cv2.CONTOURS_MATCH_I2, 0)
+            tplImage = cv2.cvtColor(tpl.image, cv2.COLOR_RGB2GRAY)
+            d = cv2.matchShapes(cv2.cvtColor(coin, cv2.COLOR_RGB2GRAY), tplImage, cv2.CONTOURS_MATCH_I2, 0)
 
+            tplClosing,tplThresh = Templates.processToMark(tpl.image)
+            cv2.imshow("tpl closing", tplThresh)
+            cv2.waitKey
+            
             print(d, tpl.value)
             if d < deduction:
                 print("Coin detected value: ", tpl.value)
@@ -33,6 +43,17 @@ class Templates:
                 deduction = d
 
         return value
+
+    
+    def processToMark(image):
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        gray_blur = cv2.GaussianBlur(gray, (25, 25), 0)
+        thresh = cv2.adaptiveThreshold(gray_blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                    cv2.THRESH_BINARY_INV, 11, 1)
+        kernel = np.ones((3, 3), np.uint8)
+        return (cv2.morphologyEx(thresh, cv2.MORPH_CLOSE,
+                               kernel, iterations=4), thresh)
 
 
 
@@ -42,7 +63,8 @@ class Template:
 
         self.path = path
         self.value = int(os.path.splitext(os.path.basename(path))[0])
-        self.image = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+        self.image = cv2.imread(path, cv2.IMREAD_COLOR)
 
-        moments = cv2.moments(self.image)
+        grey = cv2.cvtColor(self.image, cv2.COLOR_RGB2GRAY)
+        moments = cv2.moments(grey)
         self.huMoments = cv2.HuMoments(moments)
