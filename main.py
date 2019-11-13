@@ -54,6 +54,7 @@ def splitCoins(image):
 
         coin = getCoin(image, ellipse)
         value = templates.detectCoinValue(coin)
+    
 
         cv2.imshow("Coin", coin)
 
