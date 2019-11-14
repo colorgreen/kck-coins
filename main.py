@@ -76,7 +76,7 @@ def splitCoins(image):
 if __name__ == "__main__":
 
     dir = 'data-easy'
-    # dir = 'data-medium'
+    #dir = 'data-medium'
     # dir = 'templates-rotated'
 
     for file in glob.glob(dir+"/*.*"):
