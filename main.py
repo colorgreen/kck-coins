@@ -46,7 +46,7 @@ def splitCoins(image):
 
     for cnt in contours:
         area = cv2.contourArea(cnt)
-        if area < 7000 or area > 17000:
+        if area < 7000 or area > 25000:
             continue
         if len(cnt) < 5:
             continue
@@ -54,21 +54,19 @@ def splitCoins(image):
 
         coin = getCoin(image, ellipse)
         value = templates.detectCoinValue(coin)
-    
+        
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        x,y,w,h = cv2.boundingRect(cnt)
 
-        cv2.imshow("Coin", coin)
+        cv2.ellipse(copyImage, ellipse, (0, 255, 0), 2)
 
         if value is not None:
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            x,y,w,h = cv2.boundingRect(cnt)
-
             cv2.putText(copyImage, str(value), (x,y), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
 
-            cv2.ellipse(copyImage, ellipse, (0, 255, 0), 2)
 
-    cv2.imshow("Morphological Closing", closing)
-    cv2.imshow("Adaptive Thresholding", thresh)
-    cv2.waitKey(0)
+    # cv2.imshow("Morphological Closing", closing)
+    # cv2.imshow("Adaptive Thresholding", thresh)
+    #cv2.waitKey(0)
 
     return copyImage
 
@@ -79,7 +77,7 @@ if __name__ == "__main__":
     #dir = 'data-medium'
     # dir = 'templates-rotated'
 
-    for file in glob.glob(dir+"/*.*"):
+    for file in glob.glob(dir+"/c1.jpg"):
         image = cv2.imread(file, cv2.IMREAD_COLOR)
         image = splitCoins(image)
 
