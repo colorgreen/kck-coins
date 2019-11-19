@@ -51,73 +51,123 @@ class Templates:
         hsvGlobal = cv2.cvtColor(hsv, cv2.COLOR_BGR2HSV)[0,0]
         return Templates.hsvToGlobalRanges( hsvGlobal )
 
+    # return single color (b,g,r) -> (h,s,v)
+    def colorToHSV( color ):
+        hsv = np.uint8([[[color[0],color[1],color[2]]]]) 
+        hsvGlobal = cv2.cvtColor(hsv, cv2.COLOR_BGR2HSV)[0,0]
+        return Templates.hsvToGlobalRanges( hsvGlobal )
+
     # saturated coin array, mask, returns hue
     def extractHSV( saturated, mask ):
         meanColor = cv2.mean(saturated, mask)
         return Templates.colorToHSV(meanColor)
 
-    # saturated coin array, returns (hue, saturation, value)
-    def detectColorInLargeCircle(saturated):
-        mask = Templates.createCircleMask(saturated, 0.9, 0.8)
-        return Templates.extractHSV(saturated, mask) 
+    # coin array, returns (r,g,b)
+    def detectColorInLargeCircle(coin):
+        mask = Templates.createCircleMask(coin, 0.9, 0.8)
+        # return Templates.extractHSV(coin, mask) 
+        return cv2.mean(coin, mask)[:3]
 
-    # saturated coin array, returns (hue, saturation, value)
-    def detectColorInSmallCircle(saturated):
-        mask = Templates.createCircleMask(saturated, 0.5, 0.4)
-        return Templates.extractHSV(saturated, mask) 
+    # coin array, returns (r,g,b)
+    def detectColorInSmallCircle(coin):
+        mask = Templates.createCircleMask(coin, 0.5, 0.4)
+        # return Templates.extractHSV(coin, mask) 
+        return cv2.mean(coin, mask)[:3]
+    
+    # coin array, returns (r,g,b)
+    def detectFullCoinColor(coin):
+        mask = Templates.createCircleMask(coin, 0.9, 0.0)
+        # return Templates.extractHSV(coin, mask) 
+        return cv2.mean(coin, mask)[:3]
 
-    def isSilver( hsv ):
+    def isSilver( bgr ):
+        (b, g, r) = bgr
+        hsv = Templates.colorToHSV(bgr)
         (h, s, v) = hsv
 
-        if 16 <= h <= 27 and s <= 0.40 and s > v:
+        if (r-10 < g or r < g-10) and g < b:
             return True
-        if 14 <= h <= 35 and s <= 0.30:
+
+        if max(r,g,b) - min(r,g,b) < 25 and max(r,g,b) < 160:
             return True
-        if 9 <= h <= 35 and s + v <= 1.3 and s > v:
+
+        if (16 <= h <= 27 or 190 <= h <= 260 ) and r < g < b:
             return True
+        if (14 <= h <= 35 or 190 <= h <= 260 ) and r < g < b:
+            return True
+
+        # if (16 <= h <= 27 or 190 <= h <= 260 ) and s <= 0.40:
+        #     return True
+        # if (14 <= h <= 35 or 190 <= h <= 260 ) and s <= 0.30:
+        #     return True
+        # if 9 <= h <= 35 and s + v <= 1.3 :
+        #     return True
 
         return False
 
-    def isGold( hsv ):
+    def isGold( bgr ):
+        (b, g, r) = bgr
+        hsv = Templates.colorToHSV(bgr)
         (h, s, v) = hsv
 
-        if 32 <= h <= 43 and s >= 0.55:
+        if r > g > b and r > 50 and g > 30 and b > 20 and 25 <= h <= 65:
             return True
 
-        if 28 <= h <= 47 and s >= 0.55:
-            return True
+        # if 32 <= h <= 43 :
+        #     return True
+
+        # if 28 <= h <= 47 :
+        #     return True
 
         return False
 
-    def isCuprum( hsv ):
+    def isCuprum( bgr ):
+        (b, g, r) = bgr
+        hsv = Templates.colorToHSV(bgr)
         (h, s, v) = hsv
 
-        if 32 <= h <= 43 and s >= 0.65:
+        if r > g > b:
             return True
 
-        if 28 <= h <= 47 and s >= 0.55:
-            return True
+        # if 32 <= h <= 43 and s >= 0.65:
+        #     return True
+
+        # if 28 <= h <= 47 and s >= 0.55:
+        #     return True
 
         return False
+
+    # color a, b, margin percent 0-100
+    def areColorsClose( a, b, percent ):
+        return (b[0]*(1-percent/100) <= a[0] <= b[0]*(1+percent/100)) and (b[1]*(1-percent/100) <= a[1] <= b[1]*(1+percent/100)) and (b[2]*(1-percent/100) <= a[2] <= b[2]*(1+percent/100))
 
     def checkCoinType(self, coin):
 
-        hsvL = Templates.detectColorInLargeCircle(coin)
-        hsvS = Templates.detectColorInSmallCircle(coin)
+        bgrL = Templates.detectColorInLargeCircle(coin)
+        bgrS = Templates.detectColorInSmallCircle(coin)
+        bgrF = Templates.detectFullCoinColor(coin)
 
-        print( hsvL, Templates.isGold(hsvL), Templates.isSilver(hsvL), Templates.isCuprum(hsvL) )
-        print( hsvS, Templates.isGold(hsvS), Templates.isSilver(hsvS), Templates.isCuprum(hsvS) )
+        hsvL = Templates.colorToHSV(bgrL)
+        hsvS = Templates.colorToHSV(bgrS)
 
-        if Templates.isGold(hsvL) and Templates.isSilver(hsvS):
-            return Templates.COIN200
+        print( bgrL, hsvL, Templates.isGold(bgrL), Templates.isSilver(bgrL), Templates.isCuprum(bgrL) )
+        print( bgrS, hsvS, Templates.isGold(bgrS), Templates.isSilver(bgrS), Templates.isCuprum(bgrS) )
 
-        if Templates.isSilver(hsvL) and Templates.isGold(hsvS):
+        if Templates.isSilver(bgrL) and Templates.isGold(bgrS):
             return Templates.COIN500
 
-        if Templates.isSilver(hsvL) and Templates.isSilver(hsvS):
+        if Templates.isGold(bgrL) and Templates.isSilver(bgrS):
+            return Templates.COIN200
+
+        if Templates.areColorsClose(hsvL, hsvS, 10) and Templates.isSilver(bgrL) and Templates.isSilver(bgrS):
             return Templates.COIN_SILVER
 
-        if Templates.isCuprum(hsvL) and Templates.isCuprum(hsvS):
+        if Templates.areColorsClose(hsvL, hsvS, 10) and Templates.isCuprum(bgrL) and Templates.isCuprum(bgrS):
+            return Templates.COIN_CUPRUM
+
+        if Templates.isSilver(bgrF):
+            return Templates.COIN_SILVER
+        if Templates.isCuprum(bgrF):
             return Templates.COIN_CUPRUM
 
         return Templates.COIN_UNKNOWN
@@ -125,7 +175,7 @@ class Templates:
     # coin - rgb array
     def detectCoinValue(self, coin):
         closing,thresh = Templates.processToMark(coin)
-
+        
         self.i += 1
         # cv2.imwrite("cutted/"+str(self.i)+".png", coin )
 
