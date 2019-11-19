@@ -24,7 +24,7 @@ class Templates:
             t = Template(file)
             self.templates.append(t)
 
-            print("Loaded "+file)
+            # print("Loaded "+file)
 
 
     def createCircleMask(image, lr, sr):
@@ -88,7 +88,7 @@ class Templates:
         if (r-10 < g or r < g-10) and g < b:
             return True
 
-        if max(r,g,b) - min(r,g,b) < 25 and max(r,g,b) < 160:
+        if max(r,g,b) - min(r,g,b) < 25 and max(r,g,b) < 210:
             return True
 
         if (16 <= h <= 27 or 190 <= h <= 260 ) and r < g < b:
@@ -138,8 +138,12 @@ class Templates:
         return False
 
     # color a, b, margin percent 0-100
-    def areColorsClose( a, b, percent ):
+    def areColorsClosePercent( a, b, percent=10 ):
         return (b[0]*(1-percent/100) <= a[0] <= b[0]*(1+percent/100)) and (b[1]*(1-percent/100) <= a[1] <= b[1]*(1+percent/100)) and (b[2]*(1-percent/100) <= a[2] <= b[2]*(1+percent/100))
+
+    def areColorsCloseValueRGB( a, b, value=15 ):
+        return (b[0]-value <= a[0] <= b[0]+value) and (b[1]-value <= a[1] <= b[1]+value) and (b[2]-value <= a[2] <= b[2]+value)
+
 
     def checkCoinType(self, coin):
 
@@ -152,22 +156,19 @@ class Templates:
 
         print( bgrL, hsvL, Templates.isGold(bgrL), Templates.isSilver(bgrL), Templates.isCuprum(bgrL) )
         print( bgrS, hsvS, Templates.isGold(bgrS), Templates.isSilver(bgrS), Templates.isCuprum(bgrS) )
+        print( bgrF, Templates.isGold(bgrF), Templates.isSilver(bgrF) )
+        print(Templates.areColorsCloseValueRGB(bgrL, bgrS))
 
-        if Templates.isSilver(bgrL) and Templates.isGold(bgrS):
+        if (not Templates.areColorsCloseValueRGB(bgrL, bgrS)) and Templates.isSilver(bgrL) and Templates.isGold(bgrS):
             return Templates.COIN500
 
-        if Templates.isGold(bgrL) and Templates.isSilver(bgrS):
+        if (not Templates.areColorsCloseValueRGB(bgrL, bgrS)) and Templates.isGold(bgrL) and Templates.isSilver(bgrS):
             return Templates.COIN200
 
-        if Templates.areColorsClose(hsvL, hsvS, 10) and Templates.isSilver(bgrL) and Templates.isSilver(bgrS):
+        if Templates.areColorsCloseValueRGB(bgrL, bgrS) and Templates.isSilver(bgrL) and Templates.isSilver(bgrS) and Templates.isSilver(bgrF):
             return Templates.COIN_SILVER
 
-        if Templates.areColorsClose(hsvL, hsvS, 10) and Templates.isCuprum(bgrL) and Templates.isCuprum(bgrS):
-            return Templates.COIN_CUPRUM
-
-        if Templates.isSilver(bgrF):
-            return Templates.COIN_SILVER
-        if Templates.isCuprum(bgrF):
+        if Templates.areColorsCloseValueRGB(bgrL, bgrS) and Templates.isCuprum(bgrL) and Templates.isCuprum(bgrS) and Templates.isCuprum(bgrF):
             return Templates.COIN_CUPRUM
 
         return Templates.COIN_UNKNOWN

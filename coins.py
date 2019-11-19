@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 from statistics import median
+import math
 
 class Coins:
     coins = {
@@ -31,7 +32,9 @@ class Coins:
 
     # coin a(x,y,r) b(x,y,r)
     def intersects( a, b ):
-        return sqrt((b[0]-a[0])**2 + (b[1]-a[1])**2) <= a[2]+b[2]
+        if a[0] == b[0] and a[1] == b[1] and a[2] == b[2]:
+            return False
+        return math.sqrt((b[0]-a[0])**2 + (b[1]-a[1])**2) <= a[2]+b[2]
 
     def intersectsCoins( a, coins ):
         for coin in coins:

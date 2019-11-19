@@ -40,10 +40,10 @@ def getCoinCircle(image, center, r):
     return crop_image(result, 0)
 
 # list of coins [x,y,r], average r, will delete coins += 4% error margin
-def clearCoinsByRadius( coins, r ):
+def clearCoinsByRadius( coins, r, percent=5 ):
     l = []
     for coin in coins:
-        if r*0.95 <= coin[2] <= r*1.05:
+        if r*(1-percent/100) <= coin[2] <= r*(1+percent/100):
             l.append(coin)
 
     return np.array(l)
@@ -89,15 +89,14 @@ def splitCoins(image):
         circlesSorted = np.sort(circles[0].view('f4,f4,f4'), order=['f2'], axis=0).view(np.float32)[::-1]
 
         maxR = circlesSorted[0][2]
-        biggestCoins = clearCoinsByRadius(circlesSorted, maxR)
+        biggestCoins = clearCoinsByRadius(circlesSorted, maxR, 10)
         
         avgBiggestSize = Coins.getAverageCoinSizeFromArray(biggestCoins)
 
         biggestCoinsValue = getMostFrequentCoinValue(image, biggestCoins)
         print("biggestCoinsValue", biggestCoinsValue)
-
+        print(biggestCoins)
         Coins.coins[str(biggestCoinsValue)] = biggestCoins
-
         for x, y, r in circlesSorted:
 
             coin = getCoinCircle(image, (int(x),int(y)), r)
@@ -146,10 +145,22 @@ def splitCoins(image):
             elif int(coinVal) in [500]:
                 coins = fiveCoins
 
+            # if coinVal == "500":
+                # print(Coins.coins["500"])
+
             Coins.coins[coinVal] = clearCoinsByRadius(coins, 
                     avgBiggestSize*coinSize/Coins.sizes[str(biggestCoinsValue)])
 
-        print(Coins.coins["50"])
+        print(unknownCoins)
+        for coinVal, coinSize in Coins.sizes.items():
+            coins = []
+            for coin in Coins.coins[coinVal]:
+                for ccv, ccs in Coins.sizes.items():
+                    if ccv == coinVal:
+                        continue
+                if not Coins.intersectsCoins( coin, Coins.coins[ccv] ):
+                    coins.append(coin)
+            Coins.coins[coinVal] = coins
 
 
             # cv2.circle(copyImage, (int(255),int(553)), 60, (0, 205, 255), 1)
@@ -195,7 +206,7 @@ if __name__ == "__main__":
     #dir = 'data-medium'
     # dir = 'templates-rotated'
 
-    for file in glob.glob(dir+"/c11.jpg"):
+    for file in glob.glob(dir+"/c8.jpg"):
         image = cv2.imread(file, cv2.IMREAD_COLOR)
         image = splitCoins(image)
 
